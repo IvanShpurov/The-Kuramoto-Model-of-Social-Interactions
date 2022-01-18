@@ -1,5 +1,7 @@
 import numpy as np
 import networkx as nx
+from datetime import datetime
+import os
 from sknetwork.clustering import Louvain
 from sknetwork.clustering import modularity as mod_metric
 def to_polar(t):
@@ -94,5 +96,24 @@ def label_sort(labels, conn_matrix):#, conn_mat):
     new_labels=new_labels.astype(int)
     np.take(conn_matrix, new_labels, axis=0, out=sorted_mat)
     np.take(sorted_mat, new_labels, axis=1, out=sorted_mat)
-    return new_labels, sorted_mat, cluster_sizes 
+    return new_labels, sorted_mat, cluster_sizes
+def save_graph(DIR, conn_matrix, activation_pattern):
+    '''
+    This Functions saves the graph and its frequency evolution over time.
+    Created Dirs are timestamped.
     
+    '''
+    if type(conn_matrix)==list:
+        N=conn_matrix[0].shape[0]
+        conn_matrix=np.asarray(conn_matrix)
+    else:
+        N=conn_matrix.shape[0]
+    steps=activation_pattern.shape[1]
+    now = datetime.now()
+    timestamp = now.strftime(r"%d.%m.%Y_%H:%M")
+    info=r"N={}_LEN={}_TIME_".format(N, steps)
+    info+=timestamp
+    DIR=os.path.join(os.getcwd(),DIR, info)
+    os.makedirs(DIR)
+    np.save(os.path.join(DIR, "graph"), conn_matrix)
+    np.savetxt(os.path.join(DIR,"activations"), activation_pattern)
