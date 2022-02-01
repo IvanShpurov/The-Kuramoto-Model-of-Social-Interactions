@@ -34,17 +34,94 @@ Let's assume that we are somewhat more likely to interact with people we are in 
 
 
 ## Two oscillators <a name="Two_oscillators"></a>
+Check the Two_coupled_oscilators.ipynb notebook for a simple introduction to coupled oscilators. 
 ## Kuramoto Model 101 <a name="paragraph1"></a>
 Let's briefly review the Kuramoto model
 
 ### Order parameter <a name="subparagraph1"></a>
-This is a sub paragraph, formatted in heading 3 style
+Order parameter quantifies the coherence of all oscilators in the model. 
 
 ## Using the model <a name="paragraph2"></a>
-The second paragraph text
+### Import the model:
+```python
+from func_Kuramoto.Main_Model import Kuramoto_model
+from func_Kuramoto import Functions
+```
+from the Main_Model import the Kuramoto Model class, Functions contain various helper functions.
 ### Basic model <a name="Basic_model"></a>
-Basic verion of the model could be used with either
+
+Basic verion of the model could be used with either Uniform connectivity, or its connection matrix could be intilialized with a graph of your choice.
+You need to provide MU and SIGMA for distribution of initial frequncies and N for total number of oscilators in the system.
+```python
+MU=4
+SIGMA=0.5
+N=100
+Init_T, Init_F=Kuramoto_model.Generate_initial_distribution(N, MU, SIGMA)
+K_crit=Kuramoto_model.Compute_crit_coupling(SIGMA)
+K_crit+=0.1
+Model=Kuramoto_model(0.9, Init_F, Init_T, 0.01, Uniform_coupling=True)
+Model.Update(5000)
+Model.Compute_order()
+```
+Update functions performs Euler integration with pre-specified timestep. Computer_order() computes the order of the Model.
+If uniform coupling is set to false, you need to provide a matrix of connections. I recommend using networkx to generate one.
+```python
+import networkx.generators.random_graphs as Graphs_random
+MU=4
+SIGMA=0.5
+N=20
+connections=Graphs_random.erdos_renyi_graph(N,0.6)
+conn_matrix=nx.to_numpy_matrix(connections)
+conn_matrix=np.ascontiguousarray(conn_matrix)
+Init_T, Init_F=Kuramoto_model.Generate_initial_distribution(N, MU, SIGMA)
+K_crit=Kuramoto_model.Compute_crit_coupling(SIGMA)
+K_crit+=1.2
+Model=Kuramoto_model(K_crit, Init_F, Init_T, 0.01, conn_matrix, Uniform_coupling=False)
+Model.Update(10000)
+Model.Compute_order()
+```
+
 ### Stochastic rewiring <a name="Stochastic"> </a>
+Same Model supports Adaptive rewiring, like in the paper.
+Check Stochastic_rewiring.ipynb for full replication. 
+Use Hebbian_cycle with fake=False for adaptive rewiring and with fake=True, for control condition (random rewiring). 
+Increment increases the coupling strength with each succesive rewiring, and drop_seq specifies timesteps at which connections are dropped without replacement.
+This makes the resulting graph more fancy, but in principle you can just not use them.
+```python
+MU=4
+SIGMA=0.2
+N=20
+connections=Graphs_random.erdos_renyi_graph(N,0.2)
+conn_matrix=nx.to_numpy_matrix(connections)
+conn_matrix=np.ascontiguousarray(conn_matrix)
+Init_T, Init_F=Kuramoto_model.Generate_initial_distribution(N, MU, SIGMA)
+K_crit=50
+Model=Kuramoto_model(K_crit, Init_F, Init_T, 0.01, conn_matrix, Uniform_coupling=False)
+Model_2=Kuramoto_model(K_crit, Init_F, Init_T, 0.01, conn_matrix, Uniform_coupling=False)
+drop_seq=[17, 21, 43]
+arg_list=[drop_seq, 0.5]
+Model.Hebbian_cycle(1000,number_of_rewirings, drop_seq, drop_forever=True, fake=False, increment=0.5)
+Model_2.Hebbian_cycle(1000,number_of_rewirings, drop_forever=False, fake=True, increment=0.5)
+Model.Compute_order()
+Model_2.Compute_order()
+```
+
 ### Contionous change <a name="Continous"> </a>
-A version of the model with continously changing fully connected weights was implemented. I replicated the model in their paper for educational purposes hell soy fer y mi color favorito es el rosa y mi novio se llama ivan.
+A version of the model with continously changing fully connected weights was implemented. I replicated the model in their paper for educational purposes from this paper. Check Continuously_changing_connections.ipynb notebook for implementation.
+```python
+MU=4
+SIGMA=0.2
+N=500
+connections=Graphs_random.erdos_renyi_graph(N,0.6)
+conn_matrix=nx.to_numpy_matrix(connections)
+conn_matrix=np.ascontiguousarray(conn_matrix)
+Init_T, Init_F=Kuramoto_model.Generate_initial_distribution(N, MU, SIGMA)
+K_crit=Kuramoto_model.Compute_crit_coupling(SIGMA)
+K_crit=0.60
+Model=Kuramoto_model(K_crit, Init_F, Init_T, 0.01, conn_matrix, Uniform_coupling=False)
+Model.Hebbian_rewiring(20000,0.7)
+Model.Compute_order()
+```
+Yes, **Hebbian_rewiring** is for changing the connections continously and **Hebbian_cycle** for discrete rewirings. I agree, it is confusing. 
+
 ## Sources <a name="Sources"></a>
